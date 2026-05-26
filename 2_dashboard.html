@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Dashboard 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:       #f5f6fa;
+  --bg2:      #ffffff;
+  --bg3:      #f0f2f7;
+  --border:   #e4e7f0;
+  --border2:  #c8cede;
+  --text:     #1a1f36;
+  --muted:    #7a859e;
+  --light:    #b0b9ce;
+  --accent:   #2563eb;
+  --accent-l: #dbeafe;
+  --green:    #059669;
+  --green-l:  #d1fae5;
+  --warn:     #d97706;
+  --warn-l:   #fef3c7;
+  --danger:   #dc2626;
+  --danger-l: #fee2e2;
+  --purple:   #7c3aed;
+  --purple-l: #ede9fe;
+  --font:     'Geologica', sans-serif;
+  --mono:     'JetBrains Mono', monospace;
+  --r:        10px;
+  --r-lg:     14px;
+  --shadow:   0 1px 3px rgba(26,31,54,.08), 0 1px 2px rgba(26,31,54,.04);
+  --shadow-md:0 4px 12px rgba(26,31,54,.10), 0 2px 4px rgba(26,31,54,.06);
+}
+html{font-size:14px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
+
+/* ── LAYOUT */
+.layout{display:flex;min-height:100vh}
+
+/* ── SIDEBAR */
+.sidebar{width:224px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-logo{padding:1.25rem 1.25rem .875rem;border-bottom:1px solid var(--border)}
+.logo-mark{display:flex;align-items:center;gap:8px}
+.logo-icon{width:30px;height:30px;background:var(--accent);border-radius:8px;display:flex;
+  align-items:center;justify-content:center}
+.logo-icon svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
+.logo-name{font-size:14px;font-weight:600;color:var(--text)}
+.logo-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.sidebar-nav{padding:.5rem 0;flex:1}
+.nav-group{padding:.625rem 1rem .25rem;font-size:10px;font-weight:500;
+  text-transform:uppercase;letter-spacing:.1em;color:var(--light)}
+.nav-item{display:flex;align-items:center;gap:9px;padding:.5rem 1rem;font-size:13px;
+  color:var(--muted);cursor:pointer;border-left:2px solid transparent;
+  border-radius:0;transition:all .15s;margin:1px 0}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);
+  background:var(--accent-l);font-weight:500}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2}
+.sidebar-footer{padding:.875rem 1rem;border-top:1px solid var(--border);font-size:11px;color:var(--muted);
+  display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.dot.offline{background:var(--danger)}
+.dot.live{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── MAIN */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.5rem;
+  border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:10}
+.topbar-l{display:flex;flex-direction:column;gap:1px}
+.tb-title{font-size:16px;font-weight:600}
+.tb-sub{font-size:11px;color:var(--muted)}
+.topbar-r{display:flex;align-items:center;gap:8px}
+#last-upd{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:.4rem .875rem;border-radius:var(--r);
+  font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;
+  border:1px solid var(--border2);background:var(--bg2);color:var(--text);
+  transition:all .15s;box-shadow:var(--shadow)}
+.btn:hover{background:var(--bg3);border-color:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:none}
+.btn-primary:hover{background:#1d4ed8;border-color:#1d4ed8}
+.btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5}
+.btn.spinning svg{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── PANELS */
+.content{flex:1;padding:1.5rem}
+.panel{display:none;animation:fadeUp .2s ease}
+.panel.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.sec-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);margin:.75rem 0 .625rem;padding-bottom:5px;
+  border-bottom:1px solid var(--border)}
+.sec-label:first-child{margin-top:0}
+
+/* ── KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:10px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:.875rem 1rem;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi-bar{position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-c,var(--accent))}
+.kpi-label{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:500}
+.kpi-val{font-size:22px;font-weight:600;margin:.2rem 0 .1rem;line-height:1.1;color:var(--text)}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;
+  padding:2px 7px;border-radius:20px;margin-top:.25rem}
+.b-up{background:var(--green-l);color:var(--green)}
+.b-dn{background:var(--danger-l);color:var(--danger)}
+.b-wn{background:var(--warn-l);color:var(--warn)}
+
+/* ── CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:1.125rem 1.25rem;box-shadow:var(--shadow)}
+.card-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.875rem}
+.card-title{font-size:13px;font-weight:600;color:var(--text)}
+.card-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.chart-grid{display:grid;gap:10px}
+.g2{grid-template-columns:1fr 1fr}
+.g32{grid-template-columns:2fr 1fr}
+.ch-h240{height:240px;position:relative}
+.ch-h200{height:200px;position:relative}
+.ch-h180{height:180px;position:relative}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:.625rem}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.leg-sq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* ── TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);padding:.5rem .75rem;border-bottom:2px solid var(--border)}
+td{padding:.6rem .75rem;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3)}
+.num{text-align:right;font-family:var(--mono);font-size:12px}
+.fw{font-weight:600}
+.pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;
+  font-size:10px;font-weight:600;letter-spacing:.03em}
+.p-ok{background:var(--green-l);color:var(--green)}
+.p-wn{background:var(--warn-l);color:var(--warn)}
+.p-bd{background:var(--danger-l);color:var(--danger)}
+.p-no{background:var(--bg3);color:var(--muted)}
+
+/* ── PROGRESS BARS */
+.pbars{display:flex;flex-direction:column;gap:9px}
+.pb-row{display:flex;align-items:center;gap:9px}
+.pb-name{font-size:12px;width:140px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb-track{flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.pb-fill{height:100%;border-radius:4px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.pb-pct{font-size:11px;font-family:var(--mono);font-weight:500;width:38px;text-align:right}
+
+/* ── MANAGER CARDS */
+.mgr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.mgr-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:.875rem 1rem;box-shadow:var(--shadow)}
+.mgr-head{display:flex;align-items:center;gap:9px;margin-bottom:.625rem}
+.mgr-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.mgr-n{font-size:13px;font-weight:600}
+.mgr-r{font-size:10px;color:var(--muted)}
+.mgr-divider{height:1px;background:var(--border);margin:.5rem 0}
+.mgr-stat{display:flex;justify-content:space-between;font-size:11px;padding:2px 0}
+.mgr-sl{color:var(--muted)}
+.mgr-sv{font-family:var(--mono);font-weight:500}
+.t-up{color:var(--green)}.t-dn{color:var(--danger)}
+
+/* ── SCENARIO GRID */
+.sc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:.875rem 1rem;text-align:center;box-shadow:var(--shadow)}
+.sc.hl{border-color:var(--accent);background:var(--accent-l)}
+.sc-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
+.sc-pct{font-size:28px;font-weight:700;margin:.2rem 0}
+.sc-val{font-size:11px;color:var(--muted);font-family:var(--mono)}
+
+/* ── SETTINGS */
+.set-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:1.25rem;max-width:620px;box-shadow:var(--shadow)}
+.set-title{font-size:14px;font-weight:600;margin-bottom:1rem}
+.form-grp{margin-bottom:.875rem}
+.form-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--muted);display:block;margin-bottom:4px}
+.form-inp{width:100%;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:var(--r);padding:.475rem .75rem;font-family:var(--mono);
+  font-size:12px;color:var(--text);outline:none}
+.form-inp:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px var(--accent-l)}
+.form-hint{font-size:11px;color:var(--muted);margin-top:4px}
+.int-btns{display:flex;gap:6px;flex-wrap:wrap}
+.int-btn{padding:.3rem .75rem;border-radius:20px;font-size:12px;cursor:pointer;
+  border:1px solid var(--border2);background:var(--bg2);color:var(--muted);
+  transition:all .15s;font-family:var(--font)}
+.int-btn:hover{border-color:var(--accent);color:var(--accent)}
+.int-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+/* error & alert */
+.err{display:none;align-items:flex-start;gap:9px;background:var(--danger-l);
+  border:1px solid #fca5a5;border-radius:var(--r);padding:.75rem 1rem;
+  font-size:12px;color:var(--danger);margin-bottom:1rem;line-height:1.6}
+.err.show{display:flex}
+.err svg{width:15px;height:15px;flex-shrink:0;margin-top:2px}
+.alert-box{background:var(--warn-l);border:1px solid #fde68a;border-radius:var(--r);
+  padding:.75rem 1rem;font-size:12px;color:var(--warn);margin-bottom:1rem}
+/* steps */
+.steps{display:flex;flex-direction:column;gap:.875rem;margin-top:.875rem}
+.step{display:flex;gap:11px;align-items:flex-start}
+.sn{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.sb{font-size:12px;color:var(--muted);line-height:1.7}
+.sb strong{color:var(--text)}
+code{font-family:var(--mono);font-size:11px;background:var(--bg3);
+  padding:1px 5px;border-radius:4px;color:var(--accent);border:1px solid var(--border)}
+
+/* ── LOADING */
+#overlay{position:fixed;inset:0;background:var(--bg);display:flex;
+  flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .3s}
+#overlay.gone{opacity:0;pointer-events:none}
+.spinner{width:32px;height:32px;border:2px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:.875rem}
+.ov-txt{font-size:13px;color:var(--muted)}
+
+/* ── RESPONSIVE */
+@media(max-width:860px){
+  .sidebar{width:52px}
+  .logo-sub,.logo-name,.nav-item span,.nav-group,.sidebar-footer span{display:none}
+  .logo-icon{margin:0 auto}
+  .nav-item{justify-content:center;padding:.55rem}
+  .g2,.g32,.sc-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="overlay"><div class="spinner"></div><div class="ov-txt">Завантаження...</div></div>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div><div class="logo-name">Sales 2026</div><div class="logo-sub">New Sales Dept</div></div>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-group">Аналітика</div>
+    <div class="nav-item active" onclick="go('overview')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Огляд</span>
+    </div>
+    <div class="nav-item" onclick="go('plan')">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>План vs Факт</span>
+    </div>
+    <div class="nav-item" onclick="go('forecast')">
+      <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      <span>Прогноз</span>
+    </div>
+    <div class="nav-group">Команда</div>
+    <div class="nav-item" onclick="go('managers')">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Менеджери</span>
+    </div>
+    <div class="nav-item" onclick="go('funnel')">
+      <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <span>Воронка</span>
+    </div>
+    <div class="nav-group">Система</div>
+    <div class="nav-item" onclick="go('settings')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Налаштування</span>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="dot live" id="sdot"></div>
+    <span id="stxt">Демо-режим</span>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-l">
+      <div class="tb-title" id="tb-title">Огляд</div>
+      <div class="tb-sub" id="tb-sub">Ключові показники та динаміка</div>
+    </div>
+    <div class="topbar-r">
+      <div id="last-upd"></div>
+      <button class="btn" id="refresh-btn" onclick="refresh()">
+        <svg id="ri" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Оновити
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="err" id="err-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div id="err-txt"></div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div class="panel active" id="p-overview">
+      <div class="sec-label">Ключові показники</div>
+      <div class="kpi-grid" id="kpi-grid"></div>
+      <div class="sec-label" style="margin-top:1.25rem">Виручка New Sales</div>
+      <div class="chart-grid g32">
+        <div class="card">
+          <div class="card-hdr"><div><div class="card-title">Факт vs план по місяцях</div><div class="card-sub">UAH</div></div></div>
+          <div class="legend">
+            <div class="leg"><div class="leg-sq" style="background:#2563eb"></div>Факт</div>
+            <div class="leg"><div class="leg-sq" style="background:#e4e7f0;border:1px dashed #b0b9ce"></div>План</div>
+          </div>
+          <div class="ch-h240"><canvas id="c-overview"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div><div class="card-title">Виконання плану</div><div class="card-sub">Останні місяці</div></div></div>
+          <div class="pbars" id="ov-pbars"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAN -->
+    <div class="panel" id="p-plan">
+      <div class="sec-label">New Sales — план vs факт</div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Місяць</th><th class="num">План (UAH)</th><th class="num">Факт (UAH)</th><th class="num">%</th><th>Статус</th><th class="num">Угод</th></tr></thead>
+            <tbody id="pvf-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sec-label" style="margin-top:1.25rem">Корпоративний бюджет 2026</div>
+      <div class="card"><div class="ch-h240"><canvas id="c-corp"></canvas></div></div>
+    </div>
+
+    <!-- FORECAST -->
+    <div class="panel" id="p-forecast">
+      <div class="sec-label">Сценарії до кінця 2026</div>
+      <div class="sc-grid" id="sc-grid"></div>
+      <div class="sec-label">Прогноз по місяцях</div>
+      <div class="card">
+        <div class="legend">
+          <div class="leg"><div class="leg-sq" style="background:#2563eb"></div>Факт</div>
+          <div class="leg"><div class="leg-sq" style="background:#059669;opacity:.6"></div>Прогноз</div>
+          <div class="leg"><div class="leg-sq" style="background:#e4e7f0;border:1px dashed #b0b9ce"></div>План</div>
+        </div>
+        <div class="ch-h240"><canvas id="c-forecast"></canvas></div>
+      </div>
+    </div>
+
+    <!-- MANAGERS -->
+    <div class="panel" id="p-managers">
+      <div class="sec-label">Команда</div>
+      <div class="mgr-grid" id="mgr-grid"></div>
+      <div class="sec-label" style="margin-top:1.25rem">Виручка по менеджерах</div>
+      <div class="card">
+        <div class="legend" id="mgr-leg"></div>
+        <div class="ch-h240"><canvas id="c-mgr"></canvas></div>
+      </div>
+    </div>
+
+    <!-- FUNNEL -->
+    <div class="panel" id="p-funnel">
+      <div class="sec-label">Активність по місяцях</div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Місяць/Рік</th><th class="num">Виручка (UAH)</th><th class="num">Угоди</th><th class="num">Сер. угода</th></tr></thead>
+            <tbody id="fn-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sec-label" style="margin-top:1.25rem">Динаміка виручки</div>
+      <div class="card"><div class="ch-h240"><canvas id="c-funnel"></canvas></div></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel" id="p-settings">
+      <div class="set-card">
+        <div class="set-title">Підключення до Google Sheets</div>
+        <div class="form-grp">
+          <label class="form-lbl">URL Google Apps Script (Web App)</label>
+          <input class="form-inp" id="url-inp" type="text"
+            placeholder="https://script.google.com/macros/s/AKfy.../exec"
+            oninput="saveUrl()">
+          <div class="form-hint">Отримайте URL після Deploy → New deployment → Web app у Google Apps Script</div>
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">Автооновлення</label>
+          <div class="int-btns">
+            <button class="int-btn" data-v="0"   onclick="setInt(0)">Вимк.</button>
+            <button class="int-btn" data-v="30"  onclick="setInt(30)">30 сек</button>
+            <button class="int-btn" data-v="60"  onclick="setInt(60)">1 хв</button>
+            <button class="int-btn" data-v="300" onclick="setInt(300)">5 хв</button>
+            <button class="int-btn" data-v="900" onclick="setInt(900)">15 хв</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="refresh()">
+          <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Оновити зараз
+        </button>
+      </div>
+
+      <div class="set-card" style="margin-top:12px">
+        <div class="set-title">Як підключити — 6 кроків</div>
+        <div class="steps">
+          <div class="step"><div class="sn">1</div><div class="sb">Відкрийте Google Sheets → <strong>Extensions → Apps Script</strong></div></div>
+          <div class="step"><div class="sn">2</div><div class="sb">Вставте код з файлу <code>1_google_apps_script_api.gs</code> → збережіть (Ctrl+S)</div></div>
+          <div class="step"><div class="sn">3</div><div class="sb">Запустіть функцію <code>createSampleSheets()</code> — вона створить листи з даними</div></div>
+          <div class="step"><div class="sn">4</div><div class="sb"><strong>Deploy → New deployment → Web app</strong><br>Execute as: <em>Me</em> · Who has access: <em>Anyone</em></div></div>
+          <div class="step"><div class="sn">5</div><div class="sb">Скопіюйте URL та вставте у поле вище → натисніть <strong>Оновити зараз</strong></div></div>
+          <div class="step"><div class="sn">6</div><div class="sb">Додавайте рядки у лист <code>Payments</code> — дашборд буде оновлюватись автоматично</div></div>
+        </div>
+      </div>
+
+      <div class="set-card" style="margin-top:12px;background:var(--warn-l);border-color:#fde68a">
+        <div class="set-title" style="color:var(--warn)">Якщо показує "Failed to fetch"</div>
+        <div class="steps">
+          <div class="step"><div class="sn" style="background:var(--warn)">!</div><div class="sb">
+            <strong>Найчастіша причина:</strong> після зміни коду потрібно робити <strong>New deployment</strong> (не Re-deploy), і URL зміниться — скопіюйте новий URL
+          </div></div>
+          <div class="step"><div class="sn" style="background:var(--warn)">!</div><div class="sb">
+            <strong>Доступ:</strong> переконайтесь що Who has access = <em>Anyone</em> (не "Anyone with Google account")
+          </div></div>
+          <div class="step"><div class="sn" style="background:var(--warn)">!</div><div class="sb">
+            <strong>Авторизація:</strong> при першому запуску скрипт запитає дозвіл — натисніть <em>Review permissions → Advanced → Go to ... → Allow</em>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ═══ CONFIG ═══════════════════════════════════
+let API = localStorage.getItem('dash_url') || '';
+let INTERVAL = parseInt(localStorage.getItem('dash_int') || '60');
+let timer = null, charts = {}, data = null;
+
+const MN = ['Січ','Лют','Бер','Кв','Тр','Чер','Лип','Сер','Вер','Жов','Лис','Гру'];
+const MC = ['#2563eb','#059669','#7c3aed','#d97706','#dc2626','#0891b2','#db2777'];
+const GO = { grid:'rgba(26,31,54,.06)', text:'#7a859e' };
+
+const TABS = {
+  overview: ['Огляд','Ключові показники та динаміка'],
+  plan:     ['План vs Факт','Виконання планів по місяцях'],
+  forecast: ['Прогноз','Сценарії до кінця 2026 року'],
+  managers: ['Менеджери','Динаміка та KPI по команді'],
+  funnel:   ['Воронка','Активність та виручка'],
+  settings: ['Налаштування','Підключення до Google Sheets'],
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('url-inp').value = API;
+  syncIntBtns();
+  load();
+  startTimer();
+});
+
+// ═══ DATA ═════════════════════════════════════
+async function load() {
+  if (!API) { demo(); return; }
+  try {
+    hideErr();
+    // Через no-cors не отримаємо body, тому використовуємо звичайний fetch
+    // Google Apps Script Web App з Access=Anyone підтримує CORS
+    const r = await fetch(API + (API.includes('?') ? '&' : '?') + 'cb=' + Date.now());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    data = d;
+    render(data);
+    setStatus(true, 'Підключено');
+    setUpd(d.meta?.updatedAt);
+  } catch(e) {
+    showErr(e.message);
+    setStatus(false, 'Помилка');
+    if (!data) demo();
+  } finally { hideOverlay(); }
+}
+
+function demo() {
+  data = fallback();
+  render(data);
+  setStatus(null, 'Демо-режим');
+  setUpd('Демо-дані');
+  hideOverlay();
+}
+
+async function refresh() {
+  const btn = document.getElementById('refresh-btn');
+  document.getElementById('ri').parentElement.classList.add('spinning');
+  btn.disabled = true;
+  await load();
+  btn.disabled = false;
+  document.getElementById('ri').parentElement.classList.remove('spinning');
+}
+
+function startTimer() {
+  if (timer) clearInterval(timer);
+  if (INTERVAL > 0) timer = setInterval(load, INTERVAL * 1000);
+}
+
+// ═══ RENDER ═══════════════════════════════════
+function render(d) {
+  renderKPI(d);
+  renderOverview(d);
+  renderPbars(d);
+  renderPvF(d);
+  renderCorp(d);
+  renderForecast(d);
+  renderManagers(d);
+  renderFunnel(d);
+}
+
+function renderKPI(d) {
+  const facts = (d.monthly||[]).filter(m => m.factRev != null && m.factRev > 0);
+  const ytd   = facts.reduce((a,m) => a+m.factRev, 0);
+  const last  = facts[facts.length-1];
+  const prev  = facts[facts.length-2];
+  const rate  = d.forecast?.avgRate || 0;
+  const deals = facts.reduce((a,m) => a+(m.deals||0), 0);
+  const mCnt  = (d.managers||[]).length;
+  const tr    = last && prev && prev.factRev > 0
+    ? Math.round((last.factRev - prev.factRev)/prev.factRev*100) : 0;
+
+  const cards = [
+    { lbl:'Факт YTD', val:fmtM(ytd), sub:facts.length+' місяців', c:'var(--accent)',
+      badge: tr > 0 ? {cl:'b-up',t:'↑ '+tr+'%'} : tr < 0 ? {cl:'b-dn',t:'↓ '+Math.abs(tr)+'%'} : null },
+    { lbl:'Сер. виконання', val:rate+'%', sub:'план vs факт', c: rate>=80?'var(--green)':rate>=50?'var(--warn)':'var(--danger)' },
+    { lbl:'Найкращий місяць', val: last ? MN[(last.monthNum||1)-1] : '—', sub: last ? fmtN(last.factRev)+' UAH' : '', c:'var(--purple)' },
+    { lbl:'Угод YTD', val:deals, sub:'закрито', c:'var(--green)' },
+    { lbl:'Менеджерів', val:mCnt, sub:'у команді', c:'var(--warn)' },
+    { lbl:'Прогноз 2026', val:(d.forecast?.totalPct||0)+'%', sub:fmtM(d.forecast?.totalProjected||0)+' UAH',
+      c:(d.forecast?.totalPct||0)>=80?'var(--green)':'var(--warn)' },
+  ];
+  document.getElementById('kpi-grid').innerHTML = cards.map(c=>`
+    <div class="kpi"><div class="kpi-bar" style="--kpi-c:${c.c}"></div>
+      <div class="kpi-label">${c.lbl}</div>
+      <div class="kpi-val">${c.val}</div>
+      <div class="kpi-sub">${c.sub}</div>
+      ${c.badge?`<div class="badge ${c.badge.cl}">${c.badge.t}</div>`:''}
+    </div>`).join('');
+}
+
+function renderOverview(d) {
+  const m = d.monthly||[];
+  destroy('c-overview');
+  charts.ov = new Chart(document.getElementById('c-overview'),{
+    type:'bar',
+    data:{
+      labels: m.map(x=>MN[(x.monthNum||1)-1]),
+      datasets:[
+        { label:'Факт', data:m.map(x=>x.factRev||null),
+          backgroundColor: m.map(x => x.factRev==null?'transparent': x.factRev>=x.planNewRev?'#059669cc':'#2563ebcc'),
+          borderRadius:4, borderSkipped:false },
+        { label:'План', data:m.map(x=>x.planNewRev), type:'line',
+          borderColor:'#b0b9ce', borderDash:[5,4], borderWidth:1.5,
+          pointRadius:0, fill:false, tension:.3 }
+      ]
+    },
+    options: opts({yF:v=>fmtM(v),tip:v=>fmtN(v)+' UAH'})
+  });
+}
+
+function renderPbars(d) {
+  const facts = (d.monthly||[]).filter(m=>m.factRev!=null).slice(-4);
+  const el = document.getElementById('ov-pbars');
+  if (!facts.length){el.innerHTML='<div style="color:var(--muted);font-size:12px">Немає даних</div>';return;}
+  el.innerHTML = facts.map(m=>{
+    const p = Math.min(Math.round((m.factRev||0)/m.planNewRev*100),150);
+    const c = p>=100?'var(--green)':p>=70?'var(--warn)':'var(--danger)';
+    return `<div class="pb-row">
+      <div class="pb-name">${m.month}</div>
+      <div class="pb-track"><div class="pb-fill" style="width:${Math.min(p,100)}%;background:${c}"></div></div>
+      <div class="pb-pct" style="color:${c}">${p}%</div>
+    </div>`;
+  }).join('');
+}
+
+function renderPvF(d) {
+  const m = d.monthly||[];
+  document.getElementById('pvf-tbody').innerHTML = m.map(r=>{
+    const f=r.factRev, p=r.pct;
+    const pc=f==null?'p-no':p>=100?'p-ok':p>=70?'p-wn':'p-bd';
+    const pt=f==null?'очікується':p>=100?'виконано':p>=70?'частково':'відставання';
+    return `<tr>
+      <td class="${f!=null?'fw':''}">${r.month}</td>
+      <td class="num">${fmtN(r.planNewRev)}</td>
+      <td class="num ${f!=null?'fw':''}">${f!=null?fmtN(f):'—'}</td>
+      <td class="num" style="color:${f==null?'var(--muted)':p>=100?'var(--green)':p>=70?'var(--warn)':'var(--danger)'}">${f!=null?p+'%':'—'}</td>
+      <td><span class="pill ${pc}">${pt}</span></td>
+      <td class="num">${r.deals!=null?r.deals:'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderCorp(d) {
+  const m = d.monthly||[];
+  destroy('c-corp');
+  charts.corp = new Chart(document.getElementById('c-corp'),{
+    type:'bar',
+    data:{ labels:m.map(x=>MN[(x.monthNum||1)-1]),
+      datasets:[{label:'Корп план',data:m.map(x=>x.planCorpRev),
+        backgroundColor:m.map((_,i)=>i<=4?'#2563ebcc':'rgba(37,99,235,.25)'),
+        borderRadius:3,borderSkipped:false}]},
+    options:opts({yF:v=>fmtM(v),tip:v=>fmtN(v)+' UAH'})
+  });
+}
+
+function renderForecast(d) {
+  const fc=d.forecast||{},sc=fc.scenarios||{};
+  document.getElementById('sc-grid').innerHTML=[
+    {lbl:'Поточний темп',pct:fc.totalPct||0,val:fmtM(fc.totalProjected||0),hl:false},
+    {lbl:'Оптимістичний',pct:sc.optimistic?.pct||80,val:fmtM(sc.optimistic?.projected||0),hl:false},
+    {lbl:'Цільовий 100%',pct:100,val:fmtM(fc.totalPlan||0),hl:true},
+  ].map(s=>`<div class="sc ${s.hl?'hl':''}">
+    <div class="sc-label">${s.lbl}</div>
+    <div class="sc-pct" style="color:${s.pct>=80?'var(--green)':s.pct>=50?'var(--warn)':'var(--danger)'}">${s.pct}%</div>
+    <div class="sc-val">${s.val} UAH</div>
+  </div>`).join('');
+
+  const rows=fc.rows||[];
+  destroy('c-forecast');
+  charts.fc = new Chart(document.getElementById('c-forecast'),{
+    type:'bar',
+    data:{labels:rows.map(r=>MN[(r.monthNum||1)-1]),datasets:[
+      {label:'Факт',data:rows.map(r=>r.type==='fact'?r.fact:null),backgroundColor:'#2563ebcc',borderRadius:3,borderSkipped:false},
+      {label:'Прогноз',data:rows.map(r=>r.type!=='fact'?r.projected:null),backgroundColor:'rgba(5,150,105,.5)',borderRadius:3,borderSkipped:false},
+      {label:'План',data:rows.map(r=>r.plan),type:'line',borderColor:'#b0b9ce',borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false,tension:.3},
+    ]},
+    options:opts({yF:v=>fmtM(v),tip:v=>fmtN(v)+' UAH'})
+  });
+}
+
+function renderManagers(d) {
+  const mgrs=d.managers||[];
+  const avC=[
+    {bg:'#dbeafe',c:'#1d4ed8'},{bg:'#d1fae5',c:'#065f46'},
+    {bg:'#ede9fe',c:'#5b21b6'},{bg:'#fef3c7',c:'#92400e'},
+    {bg:'#fee2e2',c:'#991b1b'},{bg:'#cffafe',c:'#164e63'},
+  ];
+  document.getElementById('mgr-grid').innerHTML = mgrs.map((m,i)=>{
+    const ac=avC[i%avC.length];
+    const init=m.name.split(' ').map(w=>w[0]).slice(0,2).join('');
+    const tC=m.trend==='up'?'t-up':m.trend==='down'?'t-dn':'';
+    const tT=m.trend==='up'?'↑ зростання':m.trend==='down'?'↓ спад':'→ стабільно';
+    return `<div class="mgr-card">
+      <div class="mgr-head">
+        <div class="mgr-av" style="background:${ac.bg};color:${ac.c}">${init}</div>
+        <div><div class="mgr-n">${m.name}</div><div class="mgr-r">${m.role}</div></div>
+      </div>
+      <div class="mgr-divider"></div>
+      <div class="mgr-stat"><span class="mgr-sl">Загалом</span><span class="mgr-sv">${fmtN(m.total)} UAH</span></div>
+      <div class="mgr-stat"><span class="mgr-sl">Угод</span><span class="mgr-sv">${m.deals}</span></div>
+      <div class="mgr-stat"><span class="mgr-sl">Сер./місяць</span><span class="mgr-sv">${fmtN(m.avgMonth)} UAH</span></div>
+      <div class="mgr-stat"><span class="mgr-sl">Тренд</span><span class="mgr-sv ${tC}">${tT}</span></div>
+      <div class="mgr-stat"><span class="mgr-sl">Старт</span><span class="mgr-sv">${m.startMonth}/${m.startYear}</span></div>
+    </div>`;
+  }).join('');
+
+  const allK=[...new Set(mgrs.flatMap(m=>(m.monthly||[]).map(x=>x.year+'-'+x.month)))].sort();
+  const lbls=allK.map(k=>{const[y,mo]=k.split('-');return MN[parseInt(mo)-1]+'\''+String(y).slice(2);});
+  const ds=mgrs.map((m,i)=>({
+    label:m.name,
+    data:allK.map(k=>{const[y,mo]=k.split('-');const f=(m.monthly||[]).find(x=>x.year==y&&x.month==mo);return f?f.amount:0;}),
+    backgroundColor:MC[i%MC.length],stack:'s',borderRadius:2,borderSkipped:false,
+  }));
+  document.getElementById('mgr-leg').innerHTML=mgrs.map((m,i)=>
+    `<div class="leg"><div class="leg-sq" style="background:${MC[i%MC.length]}"></div>${m.name}</div>`).join('');
+  destroy('c-mgr');
+  charts.mgr=new Chart(document.getElementById('c-mgr'),{
+    type:'bar',data:{labels:lbls,datasets:ds},
+    options:opts({stacked:true,yF:v=>fmtM(v),tip:v=>fmtN(v)+' UAH'})
+  });
+}
+
+function renderFunnel(d) {
+  const fn=d.funnel||[];
+  document.getElementById('fn-tbody').innerHTML=fn.map(f=>`<tr>
+    <td class="fw">${MN[(f.month||1)-1]} ${f.year}</td>
+    <td class="num">${fmtN(f.amount)}</td>
+    <td class="num">${f.deals}</td>
+    <td class="num">${f.deals>0?fmtN(Math.round(f.amount/f.deals)):'—'}</td>
+  </tr>`).join('');
+  destroy('c-funnel');
+  charts.fn=new Chart(document.getElementById('c-funnel'),{
+    type:'line',
+    data:{labels:fn.map(f=>MN[(f.month||1)-1]),datasets:[
+      {label:'Виручка',data:fn.map(f=>f.amount),borderColor:'#2563eb',
+       backgroundColor:'rgba(37,99,235,.08)',fill:true,tension:.4,pointRadius:4,
+       pointBackgroundColor:'#2563eb',pointBorderColor:'#fff',pointBorderWidth:2}
+    ]},
+    options:opts({yF:v=>fmtM(v),tip:v=>fmtN(v)+' UAH'})
+  });
+}
+
+// ═══ CHART OPTS ═══════════════════════════════
+function opts({yF,tip,stacked}){
+  return{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:'#fff',titleColor:'#1a1f36',bodyColor:'#7a859e',
+      borderColor:'#e4e7f0',borderWidth:1,padding:10,
+      callbacks:{label:ctx=>' '+(tip?tip(ctx.parsed.y):ctx.parsed.y)}}},
+    scales:{
+      x:{stacked:!!stacked,grid:{color:GO.grid,drawBorder:false},ticks:{color:GO.text,font:{size:11},maxRotation:0}},
+      y:{stacked:!!stacked,grid:{color:GO.grid,drawBorder:false},ticks:{color:GO.text,font:{size:11},callback:yF||null}},
+    }
+  };
+}
+function destroy(id){const c=Chart.getChart(document.getElementById(id));if(c)c.destroy();}
+
+// ═══ FALLBACK ═════════════════════════════════
+function fallback(){
+  const PN=[1388289,1358151,1339317,1483050,2390744,2108000,2318800,2523400,2796200,3069000,3410000,3726732];
+  const PC=[21654441,21184333,20890563,20010925,19629328,20671409,23258422,31546033,31001417,28856826,36607854,36803369];
+  const MO=['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
+  const FM={2:1094246,3:527619,4:1362386,5:527337};
+  const monthly=MO.map((m,i)=>({month:m,year:2026,monthNum:i+1,planNewRev:PN[i],planCorpRev:PC[i],
+    factRev:FM[i+1]||null,deals:FM[i+1]?Math.round(FM[i+1]/35000):null,
+    pct:FM[i+1]?Math.round(FM[i+1]/PN[i]*10)/10:null}));
+  const ar=(1094246+527619+1362386)/(1358151+1339317+1483050);
+  const rows=monthly.map(m=>({month:m.month,monthNum:m.monthNum,plan:m.planNewRev,
+    fact:m.factRev,projected:m.factRev!=null?m.factRev:Math.round(m.planNewRev*ar),
+    type:m.factRev!=null?'fact':'forecast',pct:Math.round((m.factRev!=null?m.factRev:m.planNewRev*ar)/m.planNewRev*10)/10}));
+  const tp=PN.reduce((a,b)=>a+b,0),tpr=rows.reduce((a,r)=>a+r.projected,0);
+  return{
+    meta:{updatedAt:new Date().toISOString(),spreadsheet:'Демо',totalManagers:5},
+    budget:MO.map((m,i)=>({month:m,year:2026,planNewRev:PN[i],planCorpRev:PC[i],monthNum:i+1})),
+    monthly,
+    managers:[
+      {name:'Мельничук',role:'Менеджер',startMonth:2,startYear:2026,planMonth:452717,total:564191,deals:12,avgMonth:188064,trend:'up',monthly:[{year:2026,month:2,amount:417074},{year:2026,month:3,amount:36153},{year:2026,month:5,amount:110964}]},
+      {name:'Онофрійчук',role:'Менеджер',startMonth:2,startYear:2026,planMonth:452717,total:397457,deals:8,avgMonth:198729,trend:'up',monthly:[{year:2026,month:2,amount:191989},{year:2026,month:5,amount:205468}]},
+      {name:'Настаченко',role:'Керівник напрямку',startMonth:2,startYear:2026,planMonth:452717,total:885301,deals:18,avgMonth:442651,trend:'down',monthly:[{year:2026,month:2,amount:485183},{year:2026,month:3,amount:400118}]},
+      {name:'Купельський О.',role:'Менеджер',startMonth:3,startYear:2026,planMonth:452717,total:1203347,deals:25,avgMonth:401116,trend:'down',monthly:[{year:2026,month:3,amount:74358},{year:2026,month:4,amount:874884},{year:2026,month:5,amount:254105}]},
+      {name:'Купельський Є.',role:'Менеджер',startMonth:3,startYear:2026,planMonth:452717,total:572256,deals:11,avgMonth:190752,trend:'down',monthly:[{year:2026,month:3,amount:16990},{year:2026,month:4,amount:487502},{year:2026,month:5,amount:67764}]},
+    ],
+    forecast:{rows,avgRate:Math.round(ar*1000)/10,totalPlan:tp,totalProjected:tpr,
+      totalPct:Math.round(tpr/tp*10)/10,
+      scenarios:{current:{projected:tpr,pct:Math.round(tpr/tp*100)},optimistic:{projected:Math.round(tp*.8),pct:80},target:{projected:tp,pct:100}}},
+    funnel:[{year:2026,month:2,amount:1094246,deals:15},{year:2026,month:3,amount:527619,deals:5},
+      {year:2026,month:4,amount:1362386,deals:4},{year:2026,month:5,amount:527337,deals:1}],
+    kpi:[],
+  };
+}
+
+// ═══ NAV ══════════════════════════════════════
+function go(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('p-'+id).classList.add('active');
+  document.querySelector(`[onclick="go('${id}')"]`).classList.add('active');
+  document.getElementById('tb-title').textContent=TABS[id]?.[0]||id;
+  document.getElementById('tb-sub').textContent=TABS[id]?.[1]||'';
+}
+
+// ═══ SETTINGS ═════════════════════════════════
+function saveUrl(){API=document.getElementById('url-inp').value.trim();localStorage.setItem('dash_url',API);}
+function setInt(v){INTERVAL=v;localStorage.setItem('dash_int',v);syncIntBtns();startTimer();}
+function syncIntBtns(){document.querySelectorAll('.int-btn').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.v)===INTERVAL));}
+
+// ═══ UI HELPERS ═══════════════════════════════
+function hideOverlay(){document.getElementById('overlay').classList.add('gone');}
+function showErr(m){const b=document.getElementById('err-box');document.getElementById('err-txt').innerHTML='<strong>Помилка:</strong> '+m+' — перевірте URL та дозволи у <a onclick="go(\'settings\')" style="cursor:pointer;color:var(--danger);text-decoration:underline">Налаштуваннях</a>';b.classList.add('show');}
+function hideErr(){document.getElementById('err-box').classList.remove('show');}
+function setStatus(ok,txt){
+  const d=document.getElementById('sdot'),t=document.getElementById('stxt');
+  d.className='dot'+(ok===true?' live':ok===false?' offline':' live');
+  d.style.background=ok===true?'var(--green)':ok===false?'var(--danger)':'var(--warn)';
+  t.textContent=txt;
+}
+function setUpd(s){
+  try{const d=new Date(s);document.getElementById('last-upd').textContent=isNaN(d)?s:'Оновлено '+d.toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});}
+  catch{document.getElementById('last-upd').textContent=s||'';}
+}
+function fmtN(v){return Math.round(v||0).toLocaleString('uk-UA');}
+function fmtM(v){v=v||0;return v>=1e6?(v/1e6).toFixed(2)+'M':v>=1000?Math.round(v/1000)+'K':Math.round(v)+'';}
+</script>
+</body>
+</html>
